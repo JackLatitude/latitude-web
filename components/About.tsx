@@ -39,7 +39,8 @@ export default function About() {
           </p>
           <p className="lede about-note">
             Latitude is what a sensor can hold: every stop of light between shadow and
-            highlight. It&rsquo;s also a line on a map. We work across both.
+            highlight. It&rsquo;s also a line that circumnavigates the globe. We work
+            across both.
           </p>
         </div>
       </div>
