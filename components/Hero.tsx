@@ -44,26 +44,26 @@ export default function Hero() {
           margin: 0,
         }}
       >
-        {/* Letterforms filled solid opaque white (via SVG mask) */}
+        {/* Letterforms filled solid opaque white */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
             inset: 0,
             background: '#ffffff',
-            maskImage: 'url(/logo/wordmark-letters-mask.svg)',
+            maskImage: 'url(/logo/wordmark-letters-mask.png)',
             maskSize: '100% 100%',
             maskRepeat: 'no-repeat',
-            WebkitMaskImage: 'url(/logo/wordmark-letters-mask.svg)',
+            WebkitMaskImage: 'url(/logo/wordmark-letters-mask.png)',
             WebkitMaskSize: '100% 100%',
             WebkitMaskRepeat: 'no-repeat',
           }}
         />
 
-        {/* Red circle stays solid red on top (via SVG) */}
+        {/* Red circle stays solid red on top */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logo/wordmark-circle.svg"
+          src="/logo/wordmark-circle.png"
           alt=""
           aria-hidden="true"
           style={{
@@ -73,6 +73,7 @@ export default function Hero() {
             height: '100%',
             pointerEvents: 'none',
             userSelect: 'none',
+            imageRendering: 'crisp-edges',
           }}
           draggable={false}
         />
