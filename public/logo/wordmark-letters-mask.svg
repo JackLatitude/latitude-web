@@ -1,7 +1,7 @@
 <svg viewBox="0 0 2000 538" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
   <defs>
     <mask id="letters-mask">
-      <image width="2000" height="538" xlink:href="wordmark-letters-mask.png" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;"/>
+      <image width="2000" height="538" xlink:href="/logo/wordmark-letters-mask.png" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;"/>
     </mask>
   </defs>
   <rect width="2000" height="538" fill="white" mask="url(#letters-mask)"/>
