@@ -1,0 +1,35 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black background -->
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+
+  <!-- Gradient accent -->
+  <defs>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ED2643;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ED2643;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+
+  <!-- Red accent bar -->
+  <rect x="0" y="0" width="1200" height="8" fill="#ED2643"/>
+
+  <!-- Main text -->
+  <text x="60" y="280" font-family="Metropolis, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#ffffff" letter-spacing="-1">
+    Latitude Equipment
+  </text>
+
+  <!-- Subheading -->
+  <text x="60" y="360" font-family="Metropolis, -apple-system, sans-serif" font-size="48" font-weight="400" fill="#cccccc" letter-spacing="0.5">
+    Drone Operations &amp; Camera Tracking
+  </text>
+
+  <!-- Description -->
+  <text x="60" y="430" font-family="Metropolis, -apple-system, sans-serif" font-size="32" font-weight="300" fill="#999999">
+    Specialist systems for TV &amp; film production
+  </text>
+
+  <!-- Red degree symbol accent -->
+  <text x="1100" y="180" font-family="Metropolis, -apple-system, sans-serif" font-size="140" font-weight="400" fill="#ED2643" opacity="0.3">
+    °
+  </text>
+</svg>
