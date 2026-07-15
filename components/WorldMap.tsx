@@ -15,6 +15,8 @@ const destinations: GeoPoint[] = [
   { label: 'Lofoten, Norway', lat: 68.15, lng: 13.61 },
   { label: 'Vancouver, Canada', lat: 49.28, lng: -123.12 },
   { label: 'Tokyo, Japan', lat: 35.68, lng: 139.69 },
+  { label: 'Athens, Greece', lat: 37.97, lng: 23.73 },
+  { label: 'Bahrain', lat: 26.07, lng: 50.56 },
 ]
 
 /** 51.5 → 51.50° N — the company's own unit, used as the company's own unit. */
