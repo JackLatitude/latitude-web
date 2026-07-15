@@ -1,0 +1,32 @@
+{
+  "name": "latitude-equipment-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "gallery:manifest": "node scripts/gallery-manifest.mjs",
+    "predev": "npm run gallery:manifest",
+    "dev": "next dev",
+    "prebuild": "npm run gallery:manifest",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "image-size": "^2.0.2",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-photo-album": "^3.6.0",
+    "resend": "^4.0.0",
+    "three": "^0.185.1",
+    "yet-another-react-lightbox": "^3.32.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.185.1",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

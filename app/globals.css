@@ -1,0 +1,226 @@
+@font-face {
+  font-family: 'Metropolis';
+  src: url('/fonts/Metropolis-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Metropolis';
+  src: url('/fonts/Metropolis-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Metropolis';
+  src: url('/fonts/Metropolis-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Metropolis';
+  src: url('/fonts/Metropolis-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --rec: #ED2643;
+  --rec-dim: rgba(237, 38, 67, 0.14);
+  /* text tiers — secondary lifted to ~#a3a3a3 for AA contrast on near-black */
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #6b6b6b;
+  --grey-mid: #a3a3a3;
+  --grey-rule: #262626;
+  --surface: #141414;
+  --surface-raised: #1a1a1a;
+
+  /* cinematic easing */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* fluid section padding */
+  --section-y: clamp(4.5rem, 9vw, 8rem);
+  --gutter: 2rem;
+  --max-w: 1280px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-rec: var(--rec);
+  --color-grey-mid: var(--grey-mid);
+  --color-grey-rule: var(--grey-rule);
+  --color-surface: var(--surface);
+  --font-sans: 'Metropolis', system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Metropolis', Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scan line signature animation */
+@keyframes scan {
+  0%   { transform: translateY(0);    opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.scanline {
+  animation: scan 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* ─────────────────────────────────────────────
+   Section framing system
+   ───────────────────────────────────────────── */
+.section {
+  padding: var(--section-y) var(--gutter);
+  border-bottom: 1px solid var(--grey-rule);
+}
+.section__inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+/* Section sigil — the brand's degree/REC ring, the one recurring mark.
+   Replaces the numbered tracked-caps eyebrow. */
+.sigil {
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--rec);
+  margin: 0 0 1.6rem;
+}
+
+/* Section statement headline — the hierarchy anchor and section opener */
+.statement {
+  font-weight: 200;
+  font-size: clamp(2.1rem, 5vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  color: #fff;
+  margin: 0;
+}
+.statement em {
+  font-style: normal;
+  color: var(--rec);
+}
+
+.lede {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+
+/* ─────────────────────────────────────────────
+   Reveals — content is visible by default; the hidden
+   initial state only applies when JS (.js) can restore it.
+   ───────────────────────────────────────────── */
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Headline reveal: a clip-mask rise, distinct from the body stagger */
+@keyframes headlineRise {
+  from { opacity: 0; clip-path: inset(0 0 100% 0); transform: translateY(0.4em); }
+  to   { opacity: 1; clip-path: inset(0 0 -0.15em 0); transform: translateY(0); }
+}
+.js .reveal-head { opacity: 0; }
+.reveal-head.in { animation: headlineRise 0.9s var(--ease-expo) forwards; }
+
+/* Body stagger */
+.js .stagger > * {
+  opacity: 0;
+  transform: translateY(26px);
+}
+.stagger.in > * {
+  animation: revealUp 0.85s var(--ease-expo) forwards;
+}
+.stagger.in > *:nth-child(1) { animation-delay: 0.00s; }
+.stagger.in > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger.in > *:nth-child(3) { animation-delay: 0.16s; }
+.stagger.in > *:nth-child(4) { animation-delay: 0.24s; }
+.stagger.in > *:nth-child(5) { animation-delay: 0.32s; }
+.stagger.in > *:nth-child(6) { animation-delay: 0.40s; }
+
+/* Keyboard focus — brand ring, only for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--rec);
+  outline-offset: 3px;
+  border-radius: 1px;
+}
+
+/* World map arc draw-in */
+@keyframes drawArc {
+  from { stroke-dashoffset: var(--arc-len, 300); }
+  to   { stroke-dashoffset: 0; }
+}
+
+.map-arc {
+  stroke-dasharray: var(--arc-len, 300);
+  stroke-dashoffset: var(--arc-len, 300);
+}
+
+.map-visible .map-arc {
+  animation: drawArc 1.6s ease-out forwards;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.map-visible .map-dot {
+  animation: pulseDot 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-arc { stroke-dashoffset: 0 !important; animation: none !important; }
+  .map-dot { animation: none !important; }
+}
+
+/* Gallery tile reveal — cascades as the section enters */
+.js .gallery-tile {
+  opacity: 0;
+  transform: translateY(24px) scale(0.985);
+}
+.gallery-grid.in .gallery-tile {
+  animation: revealUp 0.7s var(--ease-expo) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanline { animation: none; opacity: 0; }
+  .reveal-head,
+  .stagger > *,
+  .gallery-tile { opacity: 1 !important; transform: none !important; clip-path: none !important; animation: none !important; }
+  html      { scroll-behavior: auto; }
+}
