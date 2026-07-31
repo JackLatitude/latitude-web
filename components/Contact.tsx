@@ -1,8 +1,18 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useReveal } from '@/lib/useReveal'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
+
+// Load reCAPTCHA v3 script
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (callback: () => void) => void
+      execute: (siteKey: string, options: { action: string }) => Promise<string>
+    }
+  }
+}
 
 function Field({
   id, label, type = 'text', value, onChange, required, textarea,
@@ -56,10 +66,17 @@ export default function Contact() {
     e.preventDefault()
     setStatus('sending')
     try {
+      let token = ''
+      if (window.grecaptcha) {
+        token = await window.grecaptcha.execute(
+          process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '',
+          { action: 'submit' }
+        )
+      }
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, recaptchaToken: token }),
       })
       setStatus(res.ok ? 'sent' : 'error')
     } catch {

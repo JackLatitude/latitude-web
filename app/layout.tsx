@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://latitudeequipment.co.uk',
   },
+  icons: {
+    icon: '/favicon.svg',
+  },
   openGraph: {
     title: 'Latitude Equipment | Drone Operations & Camera Tracking Rigs',
     description: 'Specialist drone operations, vehicle tracking rigs, and stabilised gimbal systems for TV, film, and commercial productions across the UK.',
@@ -117,6 +120,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* reCAPTCHA v3 */}
+        <script
+          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || ''}`}
+          async
+          defer
+        />
         {/* Sets .js synchronously before paint so reveal-hidden states only
             apply when JS can restore them. No-JS / crawlers render fully visible. */}
         <script
