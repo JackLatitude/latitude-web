@@ -30,3 +30,8 @@ yarn-error.log*
 
 # local tooling
 /.claude
+
+# cloudflare workers (opennext build output + local wrangler state)
+/.open-next/
+/.wrangler/
+.dev.vars

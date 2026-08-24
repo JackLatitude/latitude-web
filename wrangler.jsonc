@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
+  "name": "latitude-equipment-web",
+  "compatibility_date": "2026-08-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets are NOT set here — they'd be committed in plaintext. Set them once
+  // per Worker with `npx wrangler secret put <NAME>`:
+  //   RESEND_API_KEY, RECAPTCHA_SECRET_KEY
+  // NEXT_PUBLIC_RECAPTCHA_SITE_KEY is inlined into the client bundle at build
+  // time, so it must be present in the *build* environment instead — a local
+  // .env, or Workers Builds → Build variables and secrets for CI.
+}
