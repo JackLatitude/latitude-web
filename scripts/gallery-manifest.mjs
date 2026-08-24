@@ -6,10 +6,15 @@
 // Resolving it at build time is both correct everywhere and one fetch faster.
 //
 // Runs automatically via the `predev` and `prebuild` npm hooks.
-import { readdir, readFile, writeFile, mkdir } from 'fs/promises'
+//
+// Dimensions come from sharp rather than image-size: image-size has two
+// unpatched high-severity DoS advisories with no fixed release available
+// (GHSA-w3rx-r6r6-pgpr, GHSA-5p2g-fcmc-qvqq). sharp is build-time only and
+// carries no runtime cost — nothing here ships to the Worker.
+import { readdir, writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { imageSize } from 'image-size'
+import sharp from 'sharp'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const GALLERY_DIR = path.join(root, 'public', 'gallery')
@@ -29,7 +34,7 @@ const photos = (
   await Promise.all(
     files.map(async (f) => {
       try {
-        const { width, height } = imageSize(await readFile(path.join(GALLERY_DIR, f)))
+        const { width, height } = await sharp(path.join(GALLERY_DIR, f)).metadata()
         if (!width || !height) return null
         return { src: `/gallery/${f}`, width, height }
       } catch {

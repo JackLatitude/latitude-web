@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
 
+// Local-development tool. /api/gallery 404s in production (the deployed
+// filesystem is read-only), so uploads land in the working tree and then need
+// committing — the gallery manifest is rebuilt from public/gallery/ at build.
 export default function AdminUpload() {
-  const [key, setKey] = useState('')
   const [dragging, setDragging] = useState(false)
   const [log, setLog] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
@@ -13,11 +15,7 @@ export default function AdminUpload() {
       const fd = new FormData()
       fd.append('file', file)
       try {
-        const res = await fetch('/api/gallery', {
-          method: 'POST',
-          headers: { 'x-gallery-key': key },
-          body: fd,
-        })
+        const res = await fetch('/api/gallery', { method: 'POST', body: fd })
         const data = await res.json().catch(() => ({}))
         setLog(l => [
           res.ok ? `✓ ${file.name}` : `✗ ${file.name} — ${data.error || res.status}`,
@@ -54,24 +52,17 @@ export default function AdminUpload() {
           Gallery Upload
         </h1>
 
-        <input
-          type="password"
-          placeholder="Upload key"
-          value={key}
-          onChange={e => setKey(e.target.value)}
+        <p
           style={{
-            width: '100%',
-            background: '#111111',
-            border: '1px solid #2A2A2A',
-            borderRadius: '2px',
-            color: '#fff',
-            fontSize: '0.85rem',
-            padding: '0.875rem 1rem',
-            fontFamily: 'inherit',
-            outline: 'none',
-            marginBottom: '1rem',
+            fontSize: '0.7rem',
+            lineHeight: 1.6,
+            color: '#888',
+            margin: '0 0 1.5rem',
           }}
-        />
+        >
+          Local only. Uploads are written to public/gallery/ in your working
+          tree — commit them to publish.
+        </p>
 
         <label
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
