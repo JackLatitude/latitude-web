@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
     try {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      // send() RESOLVES with { data: null, error } for API-level failures — an
+      // unverified sending domain, a bad key, a rejected address. It only
+      // throws on network errors. Ignoring the return value meant every one of
+      // those was reported to the visitor as a successful send while the
+      // enquiry was silently dropped, which is how a lost lead looks.
+      const { data, error } = await resend.emails.send({
         from: 'website@latitudeequipment.co.uk',
         to: 'info@latitudeequipment.co.uk',
         replyTo: email,
@@ -49,8 +54,19 @@ export async function POST(req: NextRequest) {
           message,
         ].join('\n'),
       })
+
+      if (error) {
+        // Log the enquiry alongside the failure so it is recoverable from the
+        // Worker tail even though delivery failed.
+        console.error('[contact] resend rejected the send:', error)
+        console.error('[contact] undelivered enquiry:', { name, company, email, message })
+        return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
+      }
+
+      console.log('[contact] sent:', data?.id)
     } catch (err) {
       console.error('[contact] send error:', err)
+      console.error('[contact] undelivered enquiry:', { name, company, email, message })
       return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
     }
   } else {
