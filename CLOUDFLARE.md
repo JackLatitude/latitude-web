@@ -70,6 +70,30 @@ a local `.env`, or *Workers Builds → Build variables and secrets* in CI. See
 > `npm run build` prints a loud warning if either is missing from a production
 > build (`scripts/check-env.mjs`), but nothing errors. Check them.
 
+## 2b. BLOCKER: verify the sending domain in Resend
+
+**As of 9 Sep 2026 `latitudeequipment.co.uk` is at status `not_started` in
+Resend, so the contact form cannot send at all.** The API rejects every send
+with "The latitudeequipment.co.uk domain is not verified." This is not a
+Cloudflare problem and migrating will not fix it — it is equally broken on the
+current Vercel deployment.
+
+Add these DNS records wherever the zone is managed (Cloudflare, once the
+migration is done), then press **Verify** at https://resend.com/domains:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| TXT | `resend._domainkey` | the DKIM `p=MIGf…` public key shown in the Resend dashboard |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` (priority 10) |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+
+If these are proxied through Cloudflare, make sure they are **DNS-only** — MX
+and TXT records must not be orange-clouded.
+
+Until this is done the contact form will return a 500 to visitors. That is
+deliberate: the route used to report success regardless, which silently binned
+enquiries. See §5.
+
 ## 3. Go-live runbook
 
 **Step 1 — preflight.** From a clean clone:
@@ -207,6 +231,10 @@ Against the **real workerd runtime** (`wrangler dev`):
 `wrangler deploy --dry-run`: 6553.61 KiB upload, **gzip 1420.69 KiB** — inside
 the 3 MB free-plan limit.
 
-**Not verified, because it needs real credentials:** that a contact form
-submission actually delivers email via Resend, and that reCAPTCHA scores
-correctly. Both are step 3 of the runbook.
+Tested against the **live Resend API** with real credentials: the contact route
+correctly returns 500 and logs the reason when Resend rejects a send. Delivery
+itself could not be confirmed because the sending domain is unverified (§2b).
+
+**Still unverified, and must be checked on workers.dev before DNS cutover:**
+that an enquiry actually lands in the info@ inbox once the domain is verified,
+and that reCAPTCHA scores real submissions correctly.
