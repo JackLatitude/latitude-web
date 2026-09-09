@@ -1,0 +1,43 @@
+# Verifies the branch builds cleanly from scratch, so a reviewer does not have
+# to take the PR description's word for it. Runs on Linux — deliberately not
+# the machine this was developed on — which also proves the lockfile resolves
+# cross-platform (sharp ships per-platform native binaries).
+#
+# No secrets are needed. The build warns about missing env vars and continues;
+# that warning is expected here and is not a failure.
+name: CI
+
+on:
+  push:
+    branches: [main, cloudflare-workers]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install from the lockfile
+        run: npm ci
+
+      - name: Audit (production dependencies)
+        run: npm audit --omit=dev --audit-level=low
+
+      - name: Audit (all dependencies, including dev)
+        run: npm audit --audit-level=low
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build the Cloudflare Worker
+        run: npx opennextjs-cloudflare build
+
+      - name: Confirm the Worker bundle exists
+        run: test -f .open-next/worker.js && echo "worker.js present"

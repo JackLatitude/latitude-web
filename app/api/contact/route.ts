@@ -16,12 +16,42 @@ async function verifyCaptcha(token: string): Promise<boolean> {
   }
 }
 
+// Caps on a public, unauthenticated endpoint that sends mail on our behalf.
+// Without them a single request can push an arbitrarily large body through the
+// Resend account. Generous enough that no genuine enquiry will hit them.
+const LIMITS = { name: 200, company: 200, email: 320, message: 5000 }
+
+const clean = (v: unknown, max: number) =>
+  typeof v === 'string' ? v.trim().slice(0, max) : ''
+
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const { name, company, email, message, recaptchaToken } = body
+  // req.json() throws on an absent or malformed body, which surfaced as an
+  // unhandled 500 with an empty response — so every bot probing this endpoint
+  // logged a server error. A bad request is the client's fault: say so.
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (typeof body !== 'object' || body === null) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  const raw = body as Record<string, unknown>
+  const name = clean(raw.name, LIMITS.name)
+  const company = clean(raw.company, LIMITS.company)
+  const email = clean(raw.email, LIMITS.email)
+  const message = clean(raw.message, LIMITS.message)
+  const recaptchaToken = typeof raw.recaptchaToken === 'string' ? raw.recaptchaToken : ''
 
   if (!name || !email || !message) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+  // Deliberately loose — just enough to catch a typo or a junk submission.
+  // Anything stricter rejects valid addresses.
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
   }
 
   // Verify reCAPTCHA
