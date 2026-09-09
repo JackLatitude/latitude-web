@@ -216,17 +216,34 @@ From a **fresh clone of this branch**, not a working copy:
 - `opennextjs-cloudflare build` — exit 0, Worker bundled
 - TypeScript — clean
 
-Against the **real workerd runtime** (`wrangler dev`):
+Against the **real workerd runtime** (`wrangler dev`), with real credentials
+loaded — 18 checks, all passing:
 
 | Check | Result |
 | --- | --- |
-| `/`, `/admin`, `/sitemap.xml` | 200 |
+| `/`, `/admin`, `/sitemap.xml`, `/robots.txt` | 200 |
 | unknown paths | 404 |
 | `/gallery/*.jpg`, `/logo/*.png` | 200, served from the asset binding |
-| `POST /api/contact` — missing fields | 400 |
-| `POST /api/contact` — valid | 200 |
+| `POST /api/contact` — no body / non-JSON / JSON array | 400 |
+| `POST /api/contact` — empty object, blank name | 400 "Missing required fields" |
+| `POST /api/contact` — malformed email | 400 "Invalid email address" |
+| `POST /api/contact` — 20,000-char message | stored at exactly 5,000 (cap holds) |
+| `POST /api/contact` — valid payload | 500, correctly reporting the Resend rejection |
 | `POST /api/gallery` | 404, as intended in production |
 | `/_next/image` URLs in rendered HTML | none |
+| `noindex` on `/admin` | present |
+| `noindex` on `/` | absent (homepage stays indexable) |
+
+Credentials themselves were checked directly against the providers: the Resend
+key is accepted by its API, and the reCAPTCHA secret is accepted by Google's
+`siteverify` (a deliberately bogus token returns `invalid-input-response`
+rather than `invalid-input-secret`, which is what a wrong or mismatched key
+would give). The reCAPTCHA site key is confirmed inlined into the built client
+bundle.
+
+CI (`.github/workflows/ci.yml`) re-runs the install, both audits, the typecheck
+and the full build on Linux for every push and PR, so none of the above has to
+be taken on trust.
 
 `wrangler deploy --dry-run`: 6553.61 KiB upload, **gzip 1420.69 KiB** — inside
 the 3 MB free-plan limit.
