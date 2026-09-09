@@ -1,89 +1,212 @@
 # Deploying to Cloudflare Workers
 
-## Why `npx wrangler deploy` on its own fails
+Handover notes for whoever takes this live. The branch is ready to deploy; the
+steps below are what remain, in order.
+
+---
+
+## 0. Requirements
+
+- **Node >= 20.9** (Next 16's floor). `.nvmrc` pins **24**, which is what this
+  branch was actually built and tested against — `nvm use` will pick it up.
+  `package.json` declares the wider `>=20.9.0` range.
+- `npm ci` (not `npm install`) — the lockfile is committed and reproducible.
+
+## 1. Why `npx wrangler deploy` fails
 
 `wrangler deploy` uploads a Worker that already exists. A Next.js app is not a
-Worker — it has to be compiled into one first, by the OpenNext adapter. So the
-deploy is always two steps, and `npm run deploy` runs both:
+Worker — the OpenNext adapter has to compile it into one first. The deploy is
+always two steps, and `npm run deploy` runs both:
 
 ```
 opennextjs-cloudflare build   # next build, then bundle .open-next/worker.js
 opennextjs-cloudflare deploy  # wrangler deploy, against that bundle
 ```
 
-Running bare `wrangler deploy` before the first `opennextjs-cloudflare build`
-fails because `.open-next/worker.js` (the `main` in `wrangler.jsonc`) does not
-exist yet. `.open-next/` is a build artefact and is gitignored, so it is never
-present on a fresh clone.
+Bare `wrangler deploy` fails because `.open-next/worker.js` (the `main` in
+`wrangler.jsonc`) does not exist until that first command has run. `.open-next/`
+is a build artefact and is gitignored, so it is never present on a fresh clone.
 
-One footgun worth knowing: wrangler resolves config by walking up from the
-current directory. Run it from the repo root — from `~` it will try to scan
-the whole home directory and die on `~/.Trash` with a confusing permissions
-error.
+Two other footguns worth knowing up front:
 
-## First-time setup
+- **Run wrangler from the repo root.** It resolves config by walking *up* from
+  the current directory; from a home directory it will try to scan the whole
+  tree and die on `~/.Trash` with a misleading permissions error.
+- **Do not run `npm audit fix --force`.** It proposes *downgrading* wrangler
+  from 4.130.0 to 4.15.2, which breaks this setup. The audit is currently clean;
+  leave it alone.
+
+## 2. First-time setup
 
 ```bash
+nvm use          # or ensure node >= 20.9
+npm ci
 npx wrangler login
 ```
 
-Then set the runtime secrets once per Worker. They are deliberately **not** in
-`wrangler.jsonc`, which is committed in plaintext:
+### Secrets — two different mechanisms, and this matters
+
+| Variable | Where it goes | Why |
+| --- | --- | --- |
+| `RESEND_API_KEY` | `wrangler secret put` | Read at runtime by the Worker |
+| `RECAPTCHA_SECRET_KEY` | `wrangler secret put` | Read at runtime by the Worker |
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | **Build environment** | `NEXT_PUBLIC_*` is inlined into the client bundle by `next build` |
 
 ```bash
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put RECAPTCHA_SECRET_KEY
 ```
 
-`NEXT_PUBLIC_RECAPTCHA_SITE_KEY` is different: `NEXT_PUBLIC_*` values are
-inlined into the client bundle by `next build`, so it must be present in the
-**build** environment, not as a Worker secret. Locally that means `.env`; in
-Workers Builds CI it goes under *Build variables and secrets*.
+The third one is **not** a Worker secret. Setting it with `wrangler secret put`
+will appear to work and will do nothing. It must exist when `next build` runs —
+a local `.env`, or *Workers Builds → Build variables and secrets* in CI. See
+`.env.example`.
 
-## Everyday commands
+> **Both missing variables fail silently.** Without the site key the client
+> sends an empty captcha token, and the API treats an empty token as "captcha
+> not configured" and skips verification — the form works with no spam
+> protection. Without the Resend key the API logs the enquiry to the console
+> and still returns success — the form says "sent" and no email arrives.
+> `npm run build` prints a loud warning if either is missing from a production
+> build (`scripts/check-env.mjs`), but nothing errors. Check them.
 
-| Command           | What it does                                            |
-| ----------------- | ------------------------------------------------------- |
-| `npm run dev`     | Next dev server on :3000 — normal local development      |
-| `npm run preview` | Build, then serve the real Worker locally on :8787       |
-| `npm run deploy`  | Build, then deploy to Cloudflare                         |
-| `npm run cf-typegen` | Regenerate binding types after editing wrangler.jsonc |
+## 3. Go-live runbook
 
-Use `npm run preview` before any deploy. It runs the actual workerd runtime,
-so it catches things `next dev` cannot — anything relying on Node APIs that
-Workers does not implement, in particular.
+**Step 1 — preflight.** From a clean clone:
 
-## Things that behave differently on Workers
+```bash
+npm ci && npm run preview
+```
+
+`preview` builds and serves the real Worker on `localhost:8787` using the same
+runtime Cloudflare runs. Confirm the homepage, gallery lightbox and contact form
+work. Watch the build output for the missing-variable warning above.
+
+**Step 2 — deploy to the workers.dev subdomain first.** Do not point the live
+domain at anything yet:
+
+```bash
+npm run deploy
+```
+
+This publishes to `latitude-equipment-web.<your-subdomain>.workers.dev`. The
+live site is still on Vercel and completely unaffected at this point.
+
+**Step 3 — verify on workers.dev.** Load that URL and check:
+
+- homepage renders, globe and gallery both appear
+- gallery lightbox opens, shuffle works
+- **submit the contact form and confirm the email actually arrives** at
+  info@latitudeequipment.co.uk — this is the one thing that cannot be verified
+  without real secrets, and the one that fails silently
+- `/admin` is expected to load but reject uploads (see §5)
+
+**Step 4 — attach the custom domain.** The zone must already be on Cloudflare.
+
+⚠️ **`latitudeequipment.co.uk` currently resolves to Vercel.** A custom domain
+cannot be attached to a hostname that already has a CNAME record, so the
+existing Vercel DNS record must be deleted first. That is the actual moment of
+cutover — there will be a brief window where the domain resolves to neither.
+Do it at a quiet time.
+
+Dashboard: **Workers & Pages → latitude-equipment-web → Settings → Domains &
+Routes → Add → Custom Domain**. Cloudflare creates the DNS record and issues
+the certificate automatically.
+
+Or declaratively, by adding to `wrangler.jsonc` and redeploying:
+
+```jsonc
+"routes": [
+  { "pattern": "latitudeequipment.co.uk", "custom_domain": true },
+  { "pattern": "www.latitudeequipment.co.uk", "custom_domain": true }
+]
+```
+
+This is deliberately **not** in the committed config — with it present, any
+`npm run deploy` would seize the production domain, including a first
+exploratory one.
+
+**Step 5 — verify on the real domain**, then decommission the Vercel project.
+Keep it until you are satisfied; it is the rollback.
+
+### Rollback
+
+Fastest path is DNS: delete the Cloudflare custom domain and restore the Vercel
+CNAME. Note that removing a custom domain does **not** remove the Advanced
+Certificate Cloudflare generated — delete that manually under **SSL/TLS → Edge
+Certificates** if you are abandoning the migration.
+
+To roll back code rather than hosting, `npx wrangler rollback` reverts the
+Worker to its previous version.
+
+## 4. Everyday commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Next dev server on :3000 — normal local development |
+| `npm run preview` | Build, then serve the real Worker locally on :8787 |
+| `npm run deploy` | Build, then deploy to Cloudflare |
+| `npm run cf-typegen` | Regenerate binding types after editing `wrangler.jsonc` |
+
+Use `npm run preview` before any deploy. It runs the actual workerd runtime, so
+it catches things `next dev` cannot — anything relying on Node APIs Workers does
+not implement, in particular.
+
+### Continuous deployment (optional)
+
+Instead of deploying from a laptop, connect the repo under **Workers & Pages →
+Create → Connect to Git**. Set the build command to `npm run deploy` and add
+`NEXT_PUBLIC_RECAPTCHA_SITE_KEY` under *Build variables and secrets* — the
+runtime secrets stay as Worker secrets.
+
+## 5. Things that behave differently on Workers
 
 **Image optimization.** Workers has no Next image optimizer; the default
-`/_next/image` loader is unsupported. `next.config.ts` sets
+`/_next/image` loader is unsupported and would 500. `next.config.ts` sets
 `images.unoptimized: true`. The only `next/image` uses are the two wordmark
-PNGs in the nav and footer, rendered at 28px and 22px tall, so nothing is lost.
-Gallery photos never went through `next/image` — react-photo-album renders
-plain `<img>` against `public/gallery/`. If real photography is ever put
-through `next/image`, switch to the Cloudflare Images binding instead:
+PNGs in the nav and footer, at 28px and 22px tall, so nothing is lost. Gallery
+photos never went through `next/image` — react-photo-album renders plain `<img>`
+against `public/gallery/`. If real photography is ever put through
+`next/image`, switch to the Cloudflare Images binding instead:
 https://opennext.js.org/cloudflare/howtos/image
 
 **The gallery uploader.** `/admin` and `POST /api/gallery` write into
 `public/gallery/` on the local filesystem. That works under `npm run dev` and
 nowhere else — serverless hosts have no writable `public/`, and Workers static
-assets are immutable after deploy. The route returns 404 in production by
-design. To publish photos: add them locally (via `/admin` or straight into
-`public/gallery/`), commit, deploy. `scripts/gallery-manifest.mjs` rebuilds
-`lib/gallery-manifest.json` on every build.
+assets are immutable after deploy. The route returns 404 in production **by
+design; this is not a bug to report.** To publish photos: add them locally (via
+`/admin` or straight into `public/gallery/`), commit, deploy.
+`scripts/gallery-manifest.mjs` rebuilds `lib/gallery-manifest.json` on every
+build.
 
-**Caching.** `open-next.config.ts` uses defaults, which is correct for this
-site — every page is static or a plain dynamic route, so there is no ISR cache
-or tag revalidation to wire up. If ISR is introduced later, add a cache
-adapter: https://opennext.js.org/cloudflare/caching
+**Caching.** `open-next.config.ts` uses defaults, which is correct here — every
+page is static or a plain dynamic route, so there is no ISR cache or tag
+revalidation to wire up. If ISR is introduced later, add a cache adapter:
+https://opennext.js.org/cloudflare/caching
 
-## Verified on this branch
+## 6. What has been verified
 
-Built and run against the local workerd runtime (`wrangler dev`):
+From a **fresh clone of this branch**, not a working copy:
 
-- `/`, `/admin`, `/sitemap.xml` → 200; unknown paths → 404
-- static assets (`/gallery/*.jpg`, `/logo/*.png`) served from the asset binding
-- `POST /api/contact` → 400 on missing fields, 200 on a valid submission
-- `POST /api/gallery` → 404, as intended in production
-- no `/_next/image` URLs in the rendered HTML
-- upload size 6553.61 KiB, **gzip 1420.69 KiB** — within the 3 MB free-plan limit
+- `npm ci` — exit 0, **0 vulnerabilities** (also with `--omit=dev`)
+- `opennextjs-cloudflare build` — exit 0, Worker bundled
+- TypeScript — clean
+
+Against the **real workerd runtime** (`wrangler dev`):
+
+| Check | Result |
+| --- | --- |
+| `/`, `/admin`, `/sitemap.xml` | 200 |
+| unknown paths | 404 |
+| `/gallery/*.jpg`, `/logo/*.png` | 200, served from the asset binding |
+| `POST /api/contact` — missing fields | 400 |
+| `POST /api/contact` — valid | 200 |
+| `POST /api/gallery` | 404, as intended in production |
+| `/_next/image` URLs in rendered HTML | none |
+
+`wrangler deploy --dry-run`: 6553.61 KiB upload, **gzip 1420.69 KiB** — inside
+the 3 MB free-plan limit.
+
+**Not verified, because it needs real credentials:** that a contact form
+submission actually delivers email via Resend, and that reCAPTCHA scores
+correctly. Both are step 3 of the runbook.

@@ -2,11 +2,14 @@
   "name": "latitude-equipment-web",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "gallery:manifest": "node scripts/gallery-manifest.mjs",
     "predev": "npm run gallery:manifest",
     "dev": "next dev",
-    "prebuild": "npm run gallery:manifest",
+    "prebuild": "npm run gallery:manifest && node scripts/check-env.mjs",
     "build": "next build",
     "start": "next start",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
@@ -23,6 +26,7 @@
     "yet-another-react-lightbox": "^3.32.1"
   },
   "devDependencies": {
+    "@next/env": "^16.3.4",
     "@opennextjs/cloudflare": "^1.20.6",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.0.0",
