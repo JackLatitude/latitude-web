@@ -81,14 +81,23 @@ current Vercel deployment.
 Add these DNS records wherever the zone is managed (Cloudflare, once the
 migration is done), then press **Verify** at https://resend.com/domains:
 
-| Type | Name | Value |
-| --- | --- | --- |
-| TXT | `resend._domainkey` | the DKIM `p=MIGf…` public key shown in the Resend dashboard |
-| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` (priority 10) |
-| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+DNS for this zone is already on Cloudflare (`alexa`/`matias.ns.cloudflare.com`).
 
-If these are proxied through Cloudflare, make sure they are **DNS-only** — MX
-and TXT records must not be orange-clouded.
+| Type | Name | Value | Priority |
+| --- | --- | --- | --- |
+| TXT | `resend._domainkey` | the DKIM `p=MIGf…` key from the Resend dashboard (218 chars, paste as one string — under the 255-char TXT limit, no splitting) | — |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | — |
+
+⚠️ **The Name field must be `send`, not `@` or the bare domain.** Mail for this
+domain is Microsoft 365 (`MX → latitudeequipment-co-uk.mail.protection.outlook.com`,
+with an Outlook SPF record at the root). Resend deliberately uses a `send`
+subdomain so the two do not collide — but an MX record entered at the root
+would break inbound mail to info@. Entered as `send`, Microsoft 365 is
+unaffected.
+
+TTL Auto is fine. There is no proxy toggle on MX or TXT records, so the
+orange-cloud setting does not apply here — it only affects A/AAAA/CNAME.
 
 Until this is done the contact form will return a 500 to visitors. That is
 deliberate: the route used to report success regardless, which silently binned
