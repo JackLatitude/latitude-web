@@ -136,11 +136,24 @@ live site is still on Vercel and completely unaffected at this point.
 
 **Step 4 — attach the custom domain.** The zone must already be on Cloudflare.
 
-⚠️ **`latitudeequipment.co.uk` currently resolves to Vercel.** A custom domain
-cannot be attached to a hostname that already has a CNAME record, so the
-existing Vercel DNS record must be deleted first. That is the actual moment of
-cutover — there will be a brief window where the domain resolves to neither.
-Do it at a quiet time.
+**What the domain currently serves — checked 10 Sep 2026.** The zone is
+already on Cloudflare (`alexa`/`matias.ns.cloudflare.com`), and both the apex
+and `www` return a **static placeholder page** carrying
+`<meta name="description" content="Domain managed by Ward IT Solutions">`,
+proxied through Cloudflare, last modified 12 June 2026. `robots.txt` there is
+Cloudflare's managed default. `/sitemap.xml`, `/admin` and `/_next/*` all 404,
+so this is not the Next.js app.
+
+The Next.js site is live only at `latitude-equipment-web.vercel.app`, and that
+deployment is older than `main` — it predates the reCAPTCHA, sitemap and
+robots.txt work (no `/sitemap.xml`, no `/robots.txt`, no reCAPTCHA in the
+markup).
+
+**This makes the cutover low risk: no production traffic is being served from
+the real site today.** There is still an existing proxied record on the apex
+and on `www`, and a Worker custom domain cannot be attached to a hostname that
+already has one, so those records must be removed or replaced — but what is
+being replaced is a placeholder, not a live site.
 
 Dashboard: **Workers & Pages → latitude-equipment-web → Settings → Domains &
 Routes → Add → Custom Domain**. Cloudflare creates the DNS record and issues
@@ -159,13 +172,16 @@ This is deliberately **not** in the committed config — with it present, any
 `npm run deploy` would seize the production domain, including a first
 exploratory one.
 
-**Step 5 — verify on the real domain**, then decommission the Vercel project.
-Keep it until you are satisfied; it is the rollback.
+**Step 5 — verify on the real domain.** The Vercel project can then be
+decommissioned; keep it until you are satisfied, as it is the rollback, but
+note it is not currently serving the domain and its build is out of date.
 
 ### Rollback
 
-Fastest path is DNS: delete the Cloudflare custom domain and restore the Vercel
-CNAME. Note that removing a custom domain does **not** remove the Advanced
+Fastest path is DNS: delete the Cloudflare custom domain and restore the
+placeholder record that was there before. Note that reverting to Vercel is not
+a like-for-like restore — the domain does not point there today, and that
+deployment is behind `main`. Note that removing a custom domain does **not** remove the Advanced
 Certificate Cloudflare generated — delete that manually under **SSL/TLS → Edge
 Certificates** if you are abandoning the migration.
 
