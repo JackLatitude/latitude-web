@@ -1,43 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readdir, readFile, writeFile } from 'fs/promises'
+import { writeFile } from 'fs/promises'
 import path from 'path'
-import { imageSize } from 'image-size'
+
+// Local-development helper only, backing /admin.
+//
+// The gallery itself is served from lib/gallery-manifest.json, baked at build
+// time by scripts/gallery-manifest.mjs — there is no GET here any more; nothing
+// called it. This POST writes into public/gallery/ on the local filesystem,
+// which is meaningful only while `next dev` is running against the working
+// tree. Serverless hosts don't carry a writable public/, and on Cloudflare
+// Workers static assets are immutable after deploy, so in production this
+// route reports 404 rather than failing halfway through an upload.
+//
+// The workflow is: drop photos in via /admin locally (or straight into
+// public/gallery/), commit them, deploy.
 
 const GALLERY_DIR = path.join(process.cwd(), 'public', 'gallery')
 const ALLOWED = new Set(['.jpg', '.jpeg', '.png', '.webp'])
 const MAX_BYTES = 15 * 1024 * 1024
 
-export async function GET() {
-  const files = (await readdir(GALLERY_DIR))
-    .filter(f => ALLOWED.has(path.extname(f).toLowerCase()))
-    .sort()
-
-  const photos = (
-    await Promise.all(
-      files.map(async f => {
-        try {
-          const { width, height } = imageSize(await readFile(path.join(GALLERY_DIR, f)))
-          if (!width || !height) return null
-          return { src: `/gallery/${f}`, width, height }
-        } catch {
-          return null
-        }
-      })
-    )
-  ).filter((p): p is { src: string; width: number; height: number } => p !== null)
-
-  return NextResponse.json({ photos })
-}
-
 export async function POST(req: NextRequest) {
-  // Uploads require the key when one is configured; otherwise dev-only
-  const configuredKey = process.env.GALLERY_UPLOAD_KEY
-  if (configuredKey) {
-    if (req.headers.get('x-gallery-key') !== configuredKey) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  } else if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json({ error: 'Uploads disabled' }, { status: 403 })
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
   const formData = await req.formData()

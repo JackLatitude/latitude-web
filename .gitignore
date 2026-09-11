@@ -18,9 +18,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files (keep secrets like RESEND_API_KEY out of git)
-.env
-.env*.local
+# local env files (keep secrets like RESEND_API_KEY out of git).
+# Ignore every .env variant and re-admit only the committed template —
+# the previous `.env` + `.env*.local` pair left .env.production tracked,
+# which is exactly the file you'd create for production build-time vars.
+.env*
+!.env.example
 
 # typescript build cache
 *.tsbuildinfo
@@ -30,3 +33,8 @@ yarn-error.log*
 
 # local tooling
 /.claude
+
+# cloudflare workers (opennext build output + local wrangler state)
+/.open-next/
+/.wrangler/
+.dev.vars
