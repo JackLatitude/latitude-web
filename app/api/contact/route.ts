@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// reCAPTCHA is only enforceable when BOTH halves are configured: the site key,
+// which next build inlines into the client so the browser can mint a token, and
+// the secret, used here to verify it. The server can see both, because
+// NEXT_PUBLIC_* is inlined into this bundle too. Read directly from process.env
+// rather than through a variable, or the inlining does not happen.
+const captchaConfigured =
+  Boolean(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) &&
+  Boolean(process.env.RECAPTCHA_SECRET_KEY)
+
 async function verifyCaptcha(token: string): Promise<boolean> {
-  if (!process.env.RECAPTCHA_SECRET_KEY) return true // Skip if not configured
   try {
     const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
+      // Encoded: an unencoded token would corrupt the form body if it ever
+      // contained a reserved character.
+      body: `secret=${encodeURIComponent(process.env.RECAPTCHA_SECRET_KEY as string)}&response=${encodeURIComponent(token)}`,
     })
     const data = await res.json()
     return data.success && data.score > 0.5 // reCAPTCHA v3 returns a score 0.0-1.0
@@ -55,11 +65,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify reCAPTCHA
-  if (recaptchaToken) {
-    const captchaValid = await verifyCaptcha(recaptchaToken)
-    if (!captchaValid) {
+  if (captchaConfigured) {
+    // This was previously `if (recaptchaToken)`, which let any client skip
+    // verification entirely just by omitting the field — precisely what a spam
+    // bot does. Where captcha is wired up, a valid token is now required.
+    if (!recaptchaToken || !(await verifyCaptcha(recaptchaToken))) {
       return NextResponse.json({ error: 'Captcha verification failed' }, { status: 400 })
     }
+  } else {
+    // Not fatal — the form must keep working while captcha is being set up —
+    // but it should never pass unremarked in a deployed environment.
+    console.error(
+      '[captcha] NOT ENFORCED: accepting unverified submissions.',
+      `siteKey=${Boolean(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)}`,
+      `secret=${Boolean(process.env.RECAPTCHA_SECRET_KEY)}`
+    )
   }
 
   if (process.env.RESEND_API_KEY) {
