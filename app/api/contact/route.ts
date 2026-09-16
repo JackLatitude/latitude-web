@@ -29,6 +29,16 @@ async function verifyCaptcha(token: string): Promise<boolean> {
 // Caps on a public, unauthenticated endpoint that sends mail on our behalf.
 // Without them a single request can push an arbitrarily large body through the
 // Resend account. Generous enough that no genuine enquiry will hit them.
+// Resend will only send from a domain verified on the account, so this must
+// track whatever is verified at resend.com/domains. It is deliberately a
+// subdomain: the apex carries Microsoft 365, and keeping the two separate
+// means the sending reputation of one cannot affect the other.
+//
+// The recipient is unconstrained — info@ stays on the apex M365 mailbox — and
+// replyTo is the enquirer, so nobody ever replies to the FROM address.
+const MAIL_FROM = 'website@notifications.latitudeequipment.co.uk'
+const MAIL_TO = 'info@latitudeequipment.co.uk'
+
 const LIMITS = { name: 200, company: 200, email: 320, message: 5000 }
 
 const clean = (v: unknown, max: number) =>
@@ -92,8 +102,8 @@ export async function POST(req: NextRequest) {
       // those was reported to the visitor as a successful send while the
       // enquiry was silently dropped, which is how a lost lead looks.
       const { data, error } = await resend.emails.send({
-        from: 'website@latitudeequipment.co.uk',
-        to: 'info@latitudeequipment.co.uk',
+        from: MAIL_FROM,
+        to: MAIL_TO,
         replyTo: email,
         subject: `Enquiry from ${name}${company ? ` — ${company}` : ''}`,
         text: [

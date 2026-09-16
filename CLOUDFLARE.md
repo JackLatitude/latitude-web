@@ -85,6 +85,20 @@ a local `.env`, or *Workers Builds → Build variables and secrets* in CI. See
 
 ## 2b. BLOCKER: verify the sending domain in Resend
 
+**Updated 16 Sep 2026.** Sending moved to the subdomain
+`notifications.latitudeequipment.co.uk`, which keeps it clear of the Microsoft
+365 records on the apex. `MAIL_FROM` in `app/api/contact/route.ts` must match
+whatever is verified in Resend, or every send is rejected. It is currently
+`website@notifications.latitudeequipment.co.uk`. The recipient is unaffected:
+`info@` stays on the apex M365 mailbox.
+
+Note that Resend nests its own records under a `send.` host beneath the
+registered domain, so registering `notifications.latitudeequipment.co.uk`
+asks for records at `send.notifications.latitudeequipment.co.uk` and
+`resend._domainkey.notifications.latitudeequipment.co.uk`. Take the exact
+names from the Resend dashboard rather than assuming.
+
+
 **As of 9 Sep 2026 `latitudeequipment.co.uk` is at status `not_started` in
 Resend, so the contact form cannot send at all.** The API rejects every send
 with "The latitudeequipment.co.uk domain is not verified." This is not a
