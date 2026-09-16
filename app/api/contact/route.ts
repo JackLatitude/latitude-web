@@ -129,9 +129,18 @@ export async function POST(req: NextRequest) {
       console.error('[contact] undelivered enquiry:', { name, company, email, message })
       return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
     }
+  } else if (process.env.NODE_ENV === 'production') {
+    // No key on a deployed environment means the enquiry goes nowhere. This
+    // previously fell through to the dev branch and returned ok, so a visitor
+    // saw "sent", the enquiry was discarded, and nothing looked wrong from
+    // either end — the quietest way to lose business there is. A deployment
+    // without the key is broken, and it must say so.
+    console.error('[contact] RESEND_API_KEY is not set on this deployment.')
+    console.error('[contact] undelivered enquiry:', { name, company, email, message })
+    return NextResponse.json({ error: 'Failed to send' }, { status: 500 })
   } else {
-    // Dev: log to console until RESEND_API_KEY is configured
-    console.log('[contact] enquiry received:', { name, company, email, message })
+    // Local development only, where having no key is normal and expected.
+    console.log('[contact] dev, not sent:', { name, company, email, message })
   }
 
   return NextResponse.json({ ok: true })
