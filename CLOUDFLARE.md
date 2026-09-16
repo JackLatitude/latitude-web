@@ -62,6 +62,19 @@ will appear to work and will do nothing. It must exist when `next build` runs �
 a local `.env`, or *Workers Builds → Build variables and secrets* in CI. See
 `.env.example`.
 
+### What the build prints
+
+`npm run build` reports on these. Two different things, do not confuse them:
+
+- **"WARNING: a build-time variable is missing"** — a real problem. Only
+  `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` triggers this. It is inlined into the client
+  bundle at build time, so if it is absent from the build it is absent forever,
+  and setting it on the Worker afterwards does nothing.
+- **"Note: runtime secrets are not in the build environment"** — expected, and
+  not a fault. `RESEND_API_KEY` and `RECAPTCHA_SECRET_KEY` live on the Worker,
+  supplied by `wrangler secret put`. They are *supposed* to be absent from the
+  build. The note is only a reminder to confirm they are set on the Worker.
+
 > **Both missing variables fail silently.** Without the site key the client
 > sends an empty captcha token, and the API treats an empty token as "captcha
 > not configured" and skips verification — the form works with no spam
