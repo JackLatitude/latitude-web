@@ -1,7 +1,10 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "latitude-equipment-web",
+  // Must match the Worker that is actually deployed. It is "latitude-web",
+  // after the GitHub repo, not the local directory name — deploying under any
+  // other name silently creates a SECOND Worker and leaves the live site alone.
+  "name": "latitude-web",
   "compatibility_date": "2026-08-24",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
