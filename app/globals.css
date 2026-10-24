@@ -141,6 +141,22 @@ body {
 }
 
 /* ─────────────────────────────────────────────
+   Calls to action
+   ───────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  font-family: inherit; font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; text-decoration: none;
+  padding: 0.95rem 2.25rem; border-radius: 2px; cursor: pointer;
+  border: 1px solid var(--rec); background: var(--rec); color: #fff;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.btn:hover { background: #fff; color: #0a0a0a; border-color: #fff; }
+.btn--ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,0.35); }
+.btn--ghost:hover { background: #fff; color: #0a0a0a; border-color: #fff; }
+.btn--sm { padding: 0.6rem 1.1rem; font-size: 0.58rem; letter-spacing: 0.2em; }
+
+/* ─────────────────────────────────────────────
    Reveals — content is visible by default; the hidden
    initial state only applies when JS (.js) can restore it.
    ───────────────────────────────────────────── */

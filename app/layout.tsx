@@ -1,8 +1,11 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Latitude Equipment | Drone Operations & Camera Tracking Rigs UK',
+  title: {
+    default: 'Latitude Equipment | Drone Operations & Camera Tracking Rigs UK',
+    template: '%s | Latitude Equipment',
+  },
   description: 'Specialist drone operations, vehicle tracking rigs, and stabilised gimbal systems for TV, film, and commercial productions. Serving UK and international productions.',
   keywords: 'drone operations UK, vehicle tracking rigs, camera tracking, stabilised gimbal systems, drone filming, film production equipment, TV production services, camera operators',
   metadataBase: new URL('https://latitudeequipment.co.uk'),
@@ -10,7 +13,11 @@ export const metadata: Metadata = {
     canonical: 'https://latitudeequipment.co.uk',
   },
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
   openGraph: {
     title: 'Latitude Equipment | Drone Operations & Camera Tracking Rigs',
@@ -21,7 +28,7 @@ export const metadata: Metadata = {
     siteName: 'Latitude Equipment',
     images: [
       {
-        url: '/og-image.svg',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Latitude Equipment - Specialist Camera Systems for Film & TV',
@@ -32,8 +39,12 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Latitude Equipment | Drone Operations & Camera Tracking',
     description: 'Specialist drone and camera tracking systems for UK TV and film productions.',
-    images: ['/og-image.svg'],
+    images: ['/og-image.png'],
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -44,15 +55,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         '@type': 'Organization',
         '@id': 'https://latitudeequipment.co.uk/#organization',
         name: 'Latitude Equipment',
+        legalName: 'Latitude Equipment Ltd',
+        // Companies House 14466173 — registered office, not a trading address.
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: '195-197 Whiteladies Road',
+          addressLocality: 'Bristol',
+          postalCode: 'BS8 2SB',
+          addressCountry: 'GB',
+        },
         url: 'https://latitudeequipment.co.uk',
         email: 'info@latitudeequipment.co.uk',
-        telephone: '',
         description: 'Specialist camera systems and drone operations for television and film production',
         areaServed: ['GB', 'UK'],
         sameAs: [],
         logo: {
           '@type': 'ImageObject',
-          url: 'https://latitudeequipment.co.uk/logo.png',
+          url: 'https://latitudeequipment.co.uk/logo/wordmark-white.png',
         },
       },
       {
@@ -137,7 +156,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Cloudflare Web Analytics — cookieless, so no consent banner is
+            needed. The token is inlined at build time like the reCAPTCHA key;
+            without it nothing loads. */}
+        {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN && (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={JSON.stringify({ token: process.env.NEXT_PUBLIC_CF_BEACON_TOKEN })}
+          />
+        )}
+      </body>
     </html>
   )
 }

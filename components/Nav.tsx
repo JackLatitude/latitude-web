@@ -2,11 +2,14 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
-export default function Nav() {
-  const [scrolled, setScrolled] = useState(false)
-  const [pastHero, setPastHero] = useState(false)
+// `solid` is for pages without the full-bleed hero (privacy, 404): there is no
+// giant wordmark to hand off from, so the bar and logo show from the start.
+export default function Nav({ solid = false }: { solid?: boolean }) {
+  const [scrolled, setScrolled] = useState(solid)
+  const [pastHero, setPastHero] = useState(solid)
 
   useEffect(() => {
+    if (solid) return
     const onScroll = () => {
       setScrolled(window.scrollY > 60)
       setPastHero(window.scrollY > window.innerHeight * 0.75)
@@ -14,7 +17,7 @@ export default function Nav() {
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [solid])
 
   return (
     <nav
@@ -31,7 +34,7 @@ export default function Nav() {
         style={{
           maxWidth: '1280px',
           margin: '0 auto',
-          padding: '0 2rem',
+          padding: '0 clamp(1rem, 4vw, 2rem)',
           height: '64px',
           display: 'flex',
           alignItems: 'center',
@@ -39,8 +42,8 @@ export default function Nav() {
         }}
       >
         <a
-          href="#"
-          aria-label="Latitude Equipment"
+          href="/"
+          aria-label="Latitude Equipment home"
           style={{
             opacity: pastHero ? 1 : 0,
             pointerEvents: pastHero ? 'auto' : 'none',
@@ -56,9 +59,9 @@ export default function Nav() {
             priority
           />
         </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(1.25rem, 4vw, 2.5rem)' }}>
           <a
-            href="#gallery"
+            href="/#gallery"
             style={{
               fontSize: '0.65rem',
               fontWeight: 500,
@@ -73,21 +76,10 @@ export default function Nav() {
           >
             Gallery
           </a>
-          <a
-            href="#contact"
-            style={{
-              fontSize: '0.65rem',
-              fontWeight: 500,
-              letterSpacing: '0.2em',
-              textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.5)',
-              textDecoration: 'none',
-              transition: 'color 0.2s',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#ED2643')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
-          >
-            Contact
+          {/* The one action the site exists for. The bar is fixed, so this is
+              also the sticky CTA on mobile — reachable from every scroll depth. */}
+          <a href="/#contact" className="btn btn--sm">
+            Enquire
           </a>
         </div>
       </div>

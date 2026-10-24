@@ -25,6 +25,11 @@ const BUILD_TIME = [
     'inlined into the client bundle now — it CANNOT be set later',
     'without it the contact form accepts submissions with NO spam protection',
   ],
+  [
+    'NEXT_PUBLIC_CF_BEACON_TOKEN',
+    'inlined into the page now — it CANNOT be set later',
+    'without it Cloudflare Web Analytics records no visits (unless the dashboard injects it)',
+  ],
 ]
 
 const RUNTIME = [

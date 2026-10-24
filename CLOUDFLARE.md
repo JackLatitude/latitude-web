@@ -51,6 +51,7 @@ npx wrangler login
 | `RESEND_API_KEY` | `wrangler secret put` | Read at runtime by the Worker |
 | `RECAPTCHA_SECRET_KEY` | `wrangler secret put` | Read at runtime by the Worker |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | **Build environment** | `NEXT_PUBLIC_*` is inlined into the client bundle by `next build` |
+| `NEXT_PUBLIC_CF_BEACON_TOKEN` | **Build environment** | Cloudflare Web Analytics site token (dashboard → Analytics & Logs → Web Analytics → Add site → *manual* JS snippet). Optional: leave unset if the dashboard's automatic injection is on instead, or visits are counted twice |
 
 ```bash
 npx wrangler secret put RESEND_API_KEY

@@ -94,6 +94,20 @@ export default function Hero() {
         Specialist Camera Equipment&nbsp;&nbsp;/&nbsp;&nbsp;Television &amp; Film
       </p>
 
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: '0.75rem',
+          marginTop: '2.5rem',
+          padding: '0 1rem',
+        }}
+      >
+        <a href="#contact" className="btn">Check availability</a>
+        <a href="#gallery" className="btn btn--ghost">See the work</a>
+      </div>
+
       {/* Scroll indicator */}
       <div
         style={{

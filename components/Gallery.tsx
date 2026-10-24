@@ -78,7 +78,7 @@ export default function Gallery() {
               extras: () => <span className="gallery-tile__overlay" aria-hidden="true" />,
             }}
             componentsProps={{
-              image: { alt: 'Latitude Equipment on location', loading: 'lazy' },
+              image: { loading: 'lazy' },
             }}
           />
         </div>
@@ -88,7 +88,7 @@ export default function Gallery() {
         open={index >= 0}
         close={() => setIndex(-1)}
         index={index}
-        slides={shown.map(p => ({ src: p.src, width: p.width, height: p.height }))}
+        slides={shown.map(p => ({ src: p.src, width: p.width, height: p.height, alt: p.alt }))}
         plugins={[Thumbnails, Zoom, Fullscreen, Counter]}
         counter={{ container: { style: { top: 'unset', bottom: 0 } } }}
         thumbnails={{ width: 96, height: 60, border: 0, gap: 6, padding: 0 }}
@@ -135,9 +135,16 @@ export default function Gallery() {
           transition: opacity 0.7s var(--ease-expo), transform 0.7s var(--ease-expo);
         }
         .gallery-rpa.in { opacity: 1; transform: none; }
-        /* Each tile: clip the zoom, layer the red hover frame */
+        /* Each tile: clip the zoom, layer the red hover frame. The tile's own
+           background is the loading state — it pulses until the lazy image
+           paints over it, so slow connections see placeholders, not holes. */
+        @keyframes tileLoading {
+          0%, 100% { background-color: var(--surface); }
+          50%      { background-color: var(--surface-raised); }
+        }
         .gallery-rpa button {
-          overflow: hidden; cursor: pointer; background: none;
+          overflow: hidden; cursor: pointer; background: var(--surface);
+          animation: tileLoading 1.6s ease-in-out infinite;
           border: none; padding: 0; position: relative;
         }
         .gallery-rpa img {
@@ -164,6 +171,7 @@ export default function Gallery() {
             opacity: 1 !important; transform: none !important; transition: none !important;
           }
           .gallery-rpa img { transition: none !important; }
+          .gallery-rpa button { animation: none !important; }
           .gallery-shuffle__action { transition: background 0.2s ease !important; }
           .gallery-shuffle:hover .gallery-shuffle__action { transform: none !important; }
         }
